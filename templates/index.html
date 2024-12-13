@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elimina la basura y no toques la naturaleza</title>
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: navy;
+            color: white;
+            font-family: Arial, sans-serif;
+            height: 100vh;
+            overflow: hidden;
+        }
+        canvas {
+            background-color: rgb(235, 226, 226);
+            border: 3px solid white;
+        }
+        h1 {
+            margin: 0;
+            padding: 10px;
+        }
+        #marcador {
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+        #mensaje {
+            position: absolute;
+            font-size: 50px;
+            color: red;
+            text-align: center;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: none;
+            background-color: yellow; /* Fondo amarillo */
+            padding: 30px; /* Espaciado alrededor del texto */
+            border: 5px solid red; /* Borde rojo */
+            box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.3); /* Sombra para darle efecto */
+            border-radius: 10px; /* Bordes redondeados */
+        }
+    </style>
+</head>
+<body>
+    <h1>Elimina la basura y no toques la naturaleza</h1>
+    <div id="marcador">Puntos: 0</div>
+    <canvas id="juego" width="800" height="600"></canvas>
+    <div id="mensaje">Lo estabas haciendo muy bien, pero desgraciadamente no es suficiente. Estudia, lee e infórmate sobre todo lo que puedes hacer para salvar al planeta. </div>
+
+    <script>
+        const canvas = document.getElementById('juego');
+        const ctx = canvas.getContext('2d');
+        const marcador = document.getElementById('marcador');
+        const mensaje = document.getElementById('mensaje');
+        
+        let puntos = 0;
+        let juegoActivo = true; // Variable para controlar si el juego sigue activo o no
+
+        // Cargar imágenes
+        const murcielagoImg = new Image();
+        murcielagoImg.src = '/static/basura.png'; // Asegúrate de que las imágenes estén en el mismo directorio
+        const calaveraImg = new Image();
+        calaveraImg.src = '/static/naturaleza.png'; // Ajusta la ruta si es necesario
+
+        let murcielagoCargado = false;
+        let calaveraCargado = false;
+
+        // Marcar las imágenes como cargadas
+        murcielagoImg.onload = () => murcielagoCargado = true;
+        calaveraImg.onload = () => calaveraCargado = true;
+
+        // Clase para los murciélagos y calaveras
+        class Sprite {
+            constructor(x, y, img, type) {
+                this.x = x;
+                this.y = y;
+                this.dx = Math.random() * 4 - 2;
+                this.dy = Math.random() * 4 - 2;
+                this.img = img;
+                this.type = type; // "murcielago" o "calavera"
+                this.width = 40;
+                this.height = 40;
+            }
+
+            draw() {
+                ctx.drawImage(this.img, this.x - this.width / 2, this.y - this.height / 2, this.width, this.height);
+            }
+
+            move() {
+                this.x += this.dx;
+                this.y += this.dy;
+
+                // Rebote en los bordes
+                if (this.x < this.width / 2 || this.x > canvas.width - this.width / 2) this.dx *= -1;
+                if (this.y < this.height / 2 || this.y > canvas.height - this.height / 2) this.dy *= -1;
+            }
+        }
+
+        const sprites = [];
+        for (let i = 0; i < 55; i++) {
+            sprites.push(new Sprite(Math.random() * 800, Math.random() * 600, murcielagoImg, 'murcielago'));
+        }
+        for (let i = 0; i < 105; i++) {
+            sprites.push(new Sprite(Math.random() * 800, Math.random() * 600, calaveraImg, 'calavera'));
+        }
+
+        // Detectar clics en los sprites
+        canvas.addEventListener('click', (e) => {
+            if (!juegoActivo) return; // No hacer nada si el juego ha terminado
+
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            sprites.forEach(sprite => {
+                const dist = Math.sqrt((sprite.x - mouseX) ** 2 + (sprite.y - mouseY) ** 2);
+                if (dist < sprite.width / 2) {
+                    if (sprite.type === 'murcielago') {
+                        puntos += 1;
+                    } else if (sprite.type === 'calavera') {
+                        puntos -= 5;
+                    }
+                    marcador.textContent = `Puntos: ${puntos}`;
+                    sprite.x = Math.random() * canvas.width;
+                    sprite.y = Math.random() * canvas.height;
+                }
+            });
+        });
+
+        // Animación principal
+        function animar() {
+            if (!murcielagoCargado || !calaveraCargado) {
+                // Espera a que las imágenes se carguen
+                requestAnimationFrame(animar);
+                return;
+            }
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            sprites.forEach(sprite => {
+                sprite.move();
+                sprite.draw();
+            });
+
+            if (juegoActivo) {
+                requestAnimationFrame(animar);
+            }
+        }
+
+        // Inicia la animación
+        animar();
+
+        // Función para detener el juego y mostrar el mensaje
+        function detenerJuego() {
+            juegoActivo = false;
+            mensaje.style.display = 'block'; // Mostrar el mensaje en pantalla
+        }
+
+        // Mostrar el mensaje después de 25 segundos
+        setTimeout(detenerJuego, 25000);
+    </script>
+</body>
+</html>
